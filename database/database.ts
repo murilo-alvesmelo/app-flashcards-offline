@@ -8,7 +8,7 @@ export interface Flashcard {
 
 export async function migrateDb(db: SQLiteDatabase) {
   const DATABASE_VERSION = 1;
-  // Pega a versão atual do banco (se existir)
+
   let { user_version: currentDbVersion } = (await db.getFirstAsync<{
     user_version: number;
   }>("PRAGMA user_version")) || { user_version: 0 };
@@ -26,9 +26,6 @@ export async function migrateDb(db: SQLiteDatabase) {
         back TEXT NOT NULL
       );
     `);
-
-    // Opcional: Inserir dados iniciais para teste
-    // await db.runAsync('INSERT INTO flashcards (front, back) VALUES (?, ?)', 'React Native', 'Framework Cross-Platform');
 
     currentDbVersion = 1;
   }

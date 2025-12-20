@@ -28,9 +28,7 @@ export default function LoginScreen() {
       <Stack.Screen options={{ title: "Login" }} />
       <View className="flex-1 justify-center items-center bg-white">
         <Text className="text-2xl font-bold mb-4">Bem vindo</Text>
-        {/* Formulario login */}
         <View className="w-3/4 mb-6">
-          {/* Email Input */}
           <View className="mb-4">
             <Text className="text-sm font-semibold mb-2">Email</Text>
             <TextInput
@@ -41,7 +39,6 @@ export default function LoginScreen() {
               keyboardType="email-address"
             />
           </View>
-          {/* Password Input */}
           <View className="mb-4">
             <Text className="text-sm font-semibold mb-2">Senha</Text>
             <TextInput
@@ -51,7 +48,6 @@ export default function LoginScreen() {
               onChangeText={setPassword}
             />
           </View>
-          {/* Login Button */}
           <TouchableOpacity
             onPress={handleLogin}
             className="mt-4 bg-blue-500 rounded-lg px-4 py-2"
@@ -60,7 +56,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Botão login google */}
         <Link href="/">
           <GoogleSignInButton />
         </Link>
