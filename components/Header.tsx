@@ -1,21 +1,26 @@
 import { useAuth } from "@/context/auth-provider";
+import { router } from "expo-router";
 import React from "react";
-import { Image, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import { MonoText } from "./StyledText";
 
 export default function HeaderProfile() {
   const { user } = useAuth();
-  console.log("User data in HeaderProfile:", user?.user_metadata);
+  const handleProfilePress = () => {
+    router.push("/modal");
+  };
   return (
-    <View className="flex-row justify-between items-center p-4">
-      <MonoText className="text-2xl font-bold text-center">
-        Olá, {user?.user_metadata.full_name}
+    <View className="flex-row justify-between items-center p-4 bg-purple-500 rounded-b-2xl">
+      <MonoText className="text-xl font-bold text-center">
+        Olá{`, ${user?.user_metadata.full_name}`} 👋
       </MonoText>
       {user?.user_metadata.avatar_url && (
-        <Image
-          source={{ uri: user.user_metadata.avatar_url }}
-          style={{ width: 40, height: 40, borderRadius: 20, marginLeft: 12 }}
-        />
+        <Pressable onPress={handleProfilePress}>
+          <Image
+            source={{ uri: user.user_metadata.avatar_url }}
+            style={{ width: 40, height: 40, borderRadius: 20, marginLeft: 12 }}
+          />
+        </Pressable>
       )}
     </View>
   );

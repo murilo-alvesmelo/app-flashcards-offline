@@ -1,147 +1,89 @@
 import HeaderProfile from "@/components/Header";
 import { MonoText } from "@/components/StyledText";
-import { supabase } from "@/lib/supabase";
-import { Ionicons } from "@expo/vector-icons"; // Icones para o botão + e lixeira
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSQLiteContext } from "expo-sqlite";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  addFlashcard,
-  deleteFlashcard,
-  Flashcard,
-  getFlashcards,
-  updateFlashcard,
-} from "../../database/database";
+
+import { AddCardButton } from "@/components/AddCardButton";
+import { FlashcardCard } from "@/components/FlashcardCard";
+import { FlashcardDetailModal } from "@/components/Flashcards/FlashcardDetailModal";
+import { FlashcardFormModal } from "@/components/Flashcards/FlashcardFormModal";
+import { Flashcard } from "@/database/database";
+import { useFlashcards } from "@/hooks/useFlashcards";
+import { generateRandomColor } from "@/utils/generateRandomColor";
 
 export default function GridScreen() {
-  const db = useSQLiteContext();
-  const queryClient = useQueryClient();
+  const {
+    flashcards,
+    isLoading,
+    addFlashcard,
+    updateFlashcard,
+    deleteFlashcard,
+  } = useFlashcards();
 
-  // Estados
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentId, setCurrentId] = useState<number | null>(null);
-  const [front, setFront] = useState("");
-  const [back, setBack] = useState("");
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isDetailVisible, setIsDetailVisible] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<Flashcard | null>(null);
+  const [initialCarouselIndex, setInitialCarouselIndex] = useState(0); // NOVO ESTADO
 
-  // --- React Query Logic ---
-  const { data: flashcards, isLoading } = useQuery({
-    queryKey: ["flashcards"],
-    queryFn: () => getFlashcards(db),
-  });
+  // --- Handlers de Abertura ---
 
-  const addMutation = useMutation({
-    mutationFn: async () => await addFlashcard(db, front, back),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["flashcards"] });
-      closeModal();
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      if (currentId) await updateFlashcard(db, currentId, front, back);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["flashcards"] });
-      closeModal();
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => await deleteFlashcard(db, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["flashcards"] });
-      closeModal();
-    },
-  });
-
-  // --- Handlers ---
-  const openAddModal = () => {
-    setCurrentId(null);
-    setFront("");
-    setBack("");
-    setModalVisible(true);
+  const handleOpenAdd = () => {
+    setSelectedCard(null);
+    setIsFormVisible(true);
   };
 
-  const openEditModal = (item: Flashcard) => {
-    setCurrentId(item.id);
-    setFront(item.front);
-    setBack(item.back);
-    setModalVisible(true);
+  const handleOpenEdit = (item: Flashcard) => {
+    setSelectedCard(item);
+    setIsFormVisible(true);
   };
 
-  const closeModal = () => {
-    setModalVisible(false);
-  };
-
-  const handleSave = () => {
-    if (!front.trim() || !back.trim()) return;
-    currentId ? updateMutation.mutate() : addMutation.mutate();
-  };
-
-  const handleDelete = () => {
-    if (currentId) {
-      Alert.alert("Apagar", "Tem certeza?", [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Sim",
-          style: "destructive",
-          onPress: () => deleteMutation.mutate(currentId),
-        },
-      ]);
+  const handleOpenDetail = (item: Flashcard) => {
+    if (flashcards) {
+      const index = flashcards.findIndex((card) => card.id === item.id);
+      if (index !== -1) {
+        setInitialCarouselIndex(index);
+        setIsDetailVisible(true);
+      }
     }
   };
 
-  // --- Lista Combinada ---
+  // --- Handlers de Ação ---
+
+  const handleSaveForm = (data: {
+    id?: number;
+    front: string;
+    back: string;
+  }) => {
+    if (data.id) {
+      updateFlashcard({ id: data.id, front: data.front, back: data.back });
+    } else {
+      addFlashcard({
+        front: data.front,
+        back: data.back,
+        color: generateRandomColor(),
+      });
+    }
+    setIsFormVisible(false);
+  };
+
+  // --- Renderização da Lista ---
+
   const listData = [
     ...(flashcards || []),
     { id: "ADD_BUTTON_ID", isAddButton: true },
   ];
 
   const renderItem = ({ item }: { item: any }) => {
-    const baseCardStyle =
-      "w-[46%] aspect-square m-2 rounded-2xl border-2 border-zinc-800 p-4 justify-between";
-
     if (item.isAddButton) {
-      return (
-        <Pressable
-          className={`${baseCardStyle} items-center justify-center border-dashed bg-zinc-50 border-zinc-400`}
-          onPressIn={openAddModal}
-        >
-          <Ionicons name="add" size={48} color="#52525b" />
-        </Pressable>
-      );
+      return <AddCardButton onPress={handleOpenAdd} />;
     }
-
-    // 2. Card Normal
     return (
-      <TouchableOpacity
-        className={`${baseCardStyle} bg-white shadow-sm`}
-        onPress={() => console.log("Card pressed")}
-        onLongPress={() => openEditModal(item)}
-      >
-        <Text
-          className="text-lg font-bold text-zinc-800 leading-tight"
-          numberOfLines={3}
-        >
-          {item.front}
-        </Text>
-        <Text className="text-xs text-zinc-500 font-medium">
-          Ver resposta...
-        </Text>
-      </TouchableOpacity>
+      <FlashcardCard
+        item={item}
+        onPress={handleOpenDetail}
+        onLongPress={handleOpenEdit}
+      />
     );
   };
 
@@ -153,17 +95,11 @@ export default function GridScreen() {
     );
   }
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      Alert.alert("Erro ao deslogar: " + error.message);
-    }
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-zinc-100 pt-10">
+    <>
+      <SafeAreaView className=" bg-purple-500" />
       <HeaderProfile />
-      <MonoText className="text-xl font-extrabold ml-5 mb-4 text-zinc-800">
+      <MonoText className="text-3xl font-extrabold text-zinc-800 p-4">
         Meus Cards
       </MonoText>
 
@@ -174,68 +110,22 @@ export default function GridScreen() {
         numColumns={2}
       />
 
-      {/* Modal */}
-      <Modal visible={modalVisible} animationType="fade" transparent={true}>
-        <View className="flex-1 bg-black/60 justify-center items-center p-4">
-          <View className="w-full bg-white rounded-3xl p-6 shadow-2xl">
-            <Text className="text-2xl font-bold text-center mb-6 text-zinc-800">
-              {currentId ? "Editar Card" : "Novo Card"}
-            </Text>
+      {/* Modal de Formulário (Adicionar/Editar) */}
+      <FlashcardFormModal
+        visible={isFormVisible}
+        onClose={() => setIsFormVisible(false)}
+        onSave={handleSaveForm}
+        onDelete={deleteFlashcard}
+        initialData={selectedCard}
+      />
 
-            <Text className="text-sm font-bold text-zinc-500 mb-2 uppercase">
-              Frente (Pergunta)
-            </Text>
-            <TextInput
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-lg mb-4 h-24 text-top"
-              value={front}
-              onChangeText={setFront}
-              multiline
-              placeholder="Digite a pergunta aqui..."
-            />
-
-            <Text className="text-sm font-bold text-zinc-500 mb-2 uppercase">
-              Verso (Resposta)
-            </Text>
-            <TextInput
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-lg mb-6 h-24 text-top"
-              value={back}
-              onChangeText={setBack}
-              multiline
-              placeholder="Digite a resposta aqui..."
-            />
-
-            {/* Botões de Ação */}
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={closeModal}
-                className="flex-1 bg-zinc-200 p-4 rounded-xl items-center"
-              >
-                <Text className="font-bold text-zinc-700 text-lg">
-                  Cancelar
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleSave}
-                className="flex-1 bg-zinc-900 p-4 rounded-xl items-center"
-              >
-                <Text className="font-bold text-white text-lg">Salvar</Text>
-              </TouchableOpacity>
-            </View>
-
-            {currentId && (
-              <TouchableOpacity
-                onPress={handleDelete}
-                className="mt-4 p-2 items-center"
-              >
-                <Text className="text-red-500 font-semibold text-base">
-                  Excluir Card
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </Modal>
-    </SafeAreaView>
+      {/* Modal de Detalhes (Carrossel) */}
+      <FlashcardDetailModal
+        visible={isDetailVisible}
+        onClose={() => setIsDetailVisible(false)}
+        flashcards={flashcards}
+        initialIndex={initialCarouselIndex}
+      />
+    </>
   );
 }
