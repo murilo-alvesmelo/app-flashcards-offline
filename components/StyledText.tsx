@@ -1,5 +1,12 @@
-import { Text, TextProps } from './Themed';
+import { cssInterop } from "nativewind";
+import { Text, TextProps } from "react-native";
 
 export function MonoText(props: TextProps) {
-  return <Text {...props} style={[props.style, { fontFamily: 'SpaceMono' }]} />;
+  return <Text {...props} style={[{ fontFamily: "SpaceMono" }, props.style]} />;
 }
+
+cssInterop(MonoText, {
+  className: {
+    target: "style",
+  },
+});

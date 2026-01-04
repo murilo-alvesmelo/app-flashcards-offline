@@ -86,7 +86,7 @@ export default function GoogleSignInButton() {
     <TouchableOpacity
       onPress={onSignInButtonPress}
       style={{
-        width: 300,
+        width: "100%",
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#ffffff",

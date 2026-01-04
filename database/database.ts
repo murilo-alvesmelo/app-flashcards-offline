@@ -4,6 +4,7 @@ export interface Flashcard {
   id: number;
   front: string;
   back: string;
+  color?: string;
 }
 
 export async function migrateDb(db: SQLiteDatabase) {
@@ -23,7 +24,8 @@ export async function migrateDb(db: SQLiteDatabase) {
       CREATE TABLE IF NOT EXISTS flashcards (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         front TEXT NOT NULL,
-        back TEXT NOT NULL
+        back TEXT NOT NULL,
+        color TEXT
       );
     `);
 
@@ -38,12 +40,15 @@ export async function migrateDb(db: SQLiteDatabase) {
 export const addFlashcard = async (
   db: SQLiteDatabase,
   front: string,
-  back: string
+  back: string,
+  color?: string
 ) => {
+  console.log("Adicionando flashcard:", { front, back, color });
   return await db.runAsync(
-    "INSERT INTO flashcards (front, back) VALUES (?, ?)",
+    "INSERT INTO flashcards (front, back, color) VALUES (?, ?, ?)",
     front,
-    back
+    back,
+    color ?? null
   );
 };
 
