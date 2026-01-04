@@ -59,9 +59,12 @@ Este projeto utiliza a stack mais moderna do ecossistema React Native / Expo:
 
 ```text
 /app             # Rotas do Expo Router (Telas)
+/assets          # Fontes e Imagens
 /components      # Componentes reutilizáveis (UI)
   /flashcards    # Componentes específicos de Flashcards (Cards, Modais)
+/constants       # Contantes utilizadas no projeto
+/context         # Gerenciamento de estado global (ex: AuthProvider, ThemeProvider)
 /database        # Configuração e funções do SQLite
 /hooks           # Custom Hooks (Lógica do React Query)
 /lib             # Configurações de terceiros (Supabase)
-/assets          # Fontes e Imagens
+/utils           # Funções utilitarias
